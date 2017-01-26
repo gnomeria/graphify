@@ -8,10 +8,9 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.javalite.common.Convert;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.traversal.Evaluators;
-import org.neo4j.helpers.collection.IteratorUtil;
+import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.nlp.helpers.GraphManager;
 import org.neo4j.nlp.impl.manager.NodeManager;
-import org.neo4j.tooling.GlobalGraphOperations;
 import traversal.DecisionTree;
 
 import java.util.*;
@@ -88,8 +87,8 @@ public class VectorUtil {
     {
         Double idf;
 
-        Double d = ((Integer)getDocumentSize(db)).doubleValue();
-        Double dt = ((Integer)getDocumentSizeForFeature(db, featureId)).doubleValue();
+        Double d = ((Long)getDocumentSize(db)).doubleValue();
+        Double dt = ((Long)getDocumentSizeForFeature(db, featureId)).doubleValue();
 
         idf = Math.log(d / dt);
 
@@ -104,17 +103,17 @@ public class VectorUtil {
 
         if(vectorSpaceModelCache.getIfPresent(cacheKey) == null) {
             Node classNode = db.getNodeById(classId);
-
             termDocumentMatrix = new HashMap<>();
 
-            IteratorUtil.asCollection(db.traversalDescription()
+            Iterators.asCollection(db.traversalDescription()
                     .depthFirst()
-                    .relationships(withName("HAS_CLASS"), Direction.INCOMING)
+                    .relationships(RelationshipType.withName("HAS_CLASS"), Direction.INCOMING)
                     .evaluator(Evaluators.fromDepth(1))
                     .evaluator(Evaluators.toDepth(1))
-                    .traverse(classNode)).stream()
+                    .traverse(classNode).iterator()).stream()
                     .forEach(p ->
                     {
+//                        int matches = (Integer) p.lastRelationship().getProperty("matches");
                         int matches = (Integer) p.lastRelationship().getProperty("matches");
                         termDocumentMatrix.put(p.endNode().getId(), matches);
                     });
@@ -137,12 +136,12 @@ public class VectorUtil {
         return frequency;
     }
 
-    public static int getDocumentSize(GraphDatabaseService db)
+    public static long getDocumentSize(GraphDatabaseService db)
     {
-        int documentSize;
+        long documentSize;
         String cacheKey = "GLOBAL_DOCUMENT_SIZE";
         if(vectorSpaceModelCache.getIfPresent(cacheKey) == null) {
-            documentSize = IteratorUtil.count(GlobalGraphOperations.at(db).getAllNodesWithLabel(DynamicLabel.label("Class")));
+            documentSize = db.getAllNodes().stream().filter(v -> v.hasLabel(Label.label("Class"))).count();
             vectorSpaceModelCache.put(cacheKey, documentSize);
         }
         else
@@ -158,13 +157,13 @@ public class VectorUtil {
         Node startNode = db.getNodeById(patternId);
 
         // Feature match distribution
-        List<Double> matches = IteratorUtil.asCollection(db.traversalDescription()
+        List<Double> matches = Iterators.asCollection(db.traversalDescription()
                 .depthFirst()
-                .relationships(withName("HAS_CLASS"), Direction.OUTGOING)
+                .relationships(RelationshipType.withName("HAS_CLASS"), Direction.OUTGOING)
                 .evaluator(Evaluators.fromDepth(1))
                 .evaluator(Evaluators.toDepth(1))
                 .traverse(startNode)
-                .relationships())
+                .relationships().iterator())
                 .stream()
                 .map(p -> ((Integer)p.getProperty("matches")).doubleValue())
                 .collect(Collectors.toList());
@@ -185,9 +184,9 @@ public class VectorUtil {
         return variance;
     }
 
-    public static int getDocumentSizeForFeature(GraphDatabaseService db, Long id)
+    public static long getDocumentSizeForFeature(GraphDatabaseService db, Long id)
     {
-        int documentSize;
+        long documentSize;
 
         String cacheKey = "DOCUMENT_SIZE_FEATURE_" + id;
 
@@ -196,13 +195,13 @@ public class VectorUtil {
 
             Iterator<Node> classes = db.traversalDescription()
                     .depthFirst()
-                    .relationships(withName("HAS_CLASS"), Direction.OUTGOING)
+                    .relationships(RelationshipType.withName("HAS_CLASS"), Direction.OUTGOING)
                     .evaluator(Evaluators.fromDepth(1))
                     .evaluator(Evaluators.toDepth(1))
                     .traverse(startNode)
                     .nodes().iterator();
 
-            documentSize = IteratorUtil.count(classes);
+            documentSize = Iterators.count(classes);
 
             vectorSpaceModelCache.put(cacheKey, documentSize);
         }
@@ -332,7 +331,7 @@ public class VectorUtil {
             // Find the affinity of connections between these features
             Node startNode = db.getNodeById(a);
 
-            List<Path> paths = IteratorUtil.asCollection(db.traversalDescription()
+            List<Path> paths = Iterators.asCollection(db.traversalDescription()
                     .depthFirst()
                     .relationships(withName("HAS_AFFINITY"), Direction.BOTH)
                     .evaluator(Evaluators.fromDepth(1))
@@ -369,9 +368,7 @@ public class VectorUtil {
         Transaction tx = db.beginTx();
         // Get classes using Java API
         final List<Node> patterns = new ArrayList<>();
-        GlobalGraphOperations.at(db)
-                .getAllNodesWithLabel(DynamicLabel.label("Pattern"))
-                .forEach(a -> patterns.add(a));
+        db.findNodes(Label.label("Pattern")).stream().forEach(patterns::add);
 
         Collections.sort(patterns, (a, b) -> ((Integer)b.getProperty("threshold")).compareTo(((Integer)a.getProperty("threshold"))));
 
@@ -542,7 +539,9 @@ public class VectorUtil {
 
         Transaction tx = db.beginTx();
         // Get class id
-        Long classId = db.findNodesByLabelAndProperty(DynamicLabel.label("Class"), "name", key).iterator().next().getId();
+        //        Long classId = db.findNodes(Label.label("Class"), "name", key).iterator().next().getId();
+        Long classId = db.findNodes(Label.label("Class"), "name", key).next().getId();
+
 
         // Get weight vector for class
         List<Long> longs = documents.get(key)
@@ -601,9 +600,8 @@ public class VectorUtil {
         Transaction tx = db.beginTx();
         // Get classes using Java API
         final List<Node> finalClasses = new ArrayList<>();
-        GlobalGraphOperations.at(db)
-                .getAllNodesWithLabel(DynamicLabel.label("Class"))
-                .forEach(a -> finalClasses.add(a));
+        db.findNodes(Label.label("Class")).stream().forEach(finalClasses::add);
+
         tx.success();
         tx.close();
 

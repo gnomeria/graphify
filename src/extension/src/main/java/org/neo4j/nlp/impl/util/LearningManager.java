@@ -3,7 +3,7 @@ package org.neo4j.nlp.impl.util;
 import org.neo4j.graphalgo.GraphAlgoFactory;
 import org.neo4j.graphalgo.PathFinder;
 import org.neo4j.graphdb.*;
-import org.neo4j.helpers.collection.IteratorUtil;
+import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.nlp.helpers.GraphManager;
 import org.neo4j.nlp.impl.cache.AffinityRelationshipCache;
 import org.neo4j.nlp.impl.cache.ClassRelationshipCache;
@@ -190,8 +190,8 @@ public class LearningManager {
                     if (!toFrom.contains(key) && !regexMatcher.find()) {
                         // Depth of the start node must be > 2
                         PathFinder<Path> depthFinder = GraphAlgoFactory.shortestPath(PathExpanders.forTypeAndDirection(withName("NEXT"), Direction.OUTGOING), 100);
-                        int depth1 = IteratorUtil.count(depthFinder.findSinglePath(db.getNodeById(tree.root()), startNode).nodes().iterator());
-                        int depth2 = IteratorUtil.count(depthFinder.findSinglePath(db.getNodeById(tree.root()), endNode).nodes().iterator());
+                        long depth1 = Iterators.count(depthFinder.findSinglePath(db.getNodeById(tree.root()), startNode).nodes().iterator());
+                        long depth2 = Iterators.count(depthFinder.findSinglePath(db.getNodeById(tree.root()), endNode).nodes().iterator());
 
                         if (depth1 > 3 && depth2 > 3 && depth2 > depth1) {
                             // Eliminate descendant

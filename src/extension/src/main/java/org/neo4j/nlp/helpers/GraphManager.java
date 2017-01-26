@@ -18,7 +18,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.index.UniqueFactory;
-import org.neo4j.kernel.TopLevelTransaction;
 import org.neo4j.nlp.abstractions.Manager;
 import org.neo4j.nlp.impl.cache.PatternRelationshipCache;
 import org.neo4j.nlp.impl.manager.DataRelationshipManager;
@@ -143,7 +142,7 @@ public class GraphManager extends Manager {
                 nodeStart = getNode(keyValue, db);
             } else {
                 try(Transaction tx = db.beginTx()) {
-                    if(tx.getClass() != TopLevelTransaction.class) {
+                    if(tx.getClass() != Transaction.class) {
                         nodeStart = db.getNodeById(nodeId);
                     }
                     tx.success();
@@ -175,7 +174,8 @@ public class GraphManager extends Manager {
         Long nodeId = null;
 
         try(Transaction tx = db.beginTx()) {
-            ResourceIterator<Node> results = db.findNodesByLabelAndProperty(DynamicLabel.label(label), propertyKey, keyValue).iterator();
+//            ResourceIterator<Node> results = db.findNodesByLabelAndProperty(DynamicLabel.label(label), propertyKey, keyValue).iterator();
+            ResourceIterator<Node> results = db.findNodes(Label.label(label), propertyKey, keyValue);
             if (results.hasNext()) {
                 Node nodeStart = results.next();
                 patternCache.put(keyValue, nodeStart.getId());
@@ -204,7 +204,8 @@ public class GraphManager extends Manager {
         Node nodeStart = null;
 
         try(Transaction tx = db.beginTx()) {
-            ResourceIterator<Node> results = db.findNodesByLabelAndProperty(DynamicLabel.label(label), propertyKey, keyValue).iterator();
+//            ResourceIterator<Node> results = db.findNodesByLabelAndProperty(DynamicLabel.label(label), propertyKey, keyValue).iterator();
+            ResourceIterator<Node> results = db.findNodes(Label.label(label), propertyKey, keyValue);
             if (results.hasNext()) {
                 nodeStart = results.next();
                 patternCache.put(keyValue, nodeStart.getId());

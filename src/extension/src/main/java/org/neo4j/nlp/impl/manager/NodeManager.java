@@ -5,7 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.helpers.collection.IteratorUtil;
+import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.nlp.abstractions.Manager;
 
 import java.util.ArrayList;
@@ -106,9 +106,7 @@ public class NodeManager {
         Node thisNode = gdb.getNodeById(id);
         List<String> keys = new ArrayList<>();
         HashMap<String, Object> nodeMap = new HashMap<>();
-        IteratorUtil.addToCollection(thisNode.getPropertyKeys(), keys)
-                .stream()
-                .forEach(n -> nodeMap.put(n, thisNode.getProperty(n)));
+        Iterators.addToCollection(thisNode.getPropertyKeys().iterator(), keys).forEach(n -> nodeMap.put(n, thisNode.getProperty(n)));
         nodeMap.put("id", id);
         cache.put(id, nodeMap);
     }

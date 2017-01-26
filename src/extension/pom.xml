@@ -6,10 +6,10 @@
 
     <groupId>org.neo4j.nlp</groupId>
     <artifactId>graphify</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <properties>
-        <neo4j.version>2.2.1</neo4j.version>
+        <neo4j.version>3.1.1</neo4j.version>
     </properties>
 
     <dependencies>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>16.0.1</version>
+            <version>18.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.xmlrpc</groupId>
@@ -138,7 +138,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.10</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>

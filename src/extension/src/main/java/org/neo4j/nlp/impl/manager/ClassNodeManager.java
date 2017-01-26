@@ -48,7 +48,7 @@ public class ClassNodeManager extends Manager {
 
         if (nodeId == null) {
             Transaction tx = db.beginTx();
-            ResourceIterator<Node> results = db.findNodesByLabelAndProperty(dynamicLabel, propertyKey, keyValue).iterator();
+            ResourceIterator<Node> results = db.findNodes(dynamicLabel, propertyKey, keyValue);
             if (results.hasNext()) {
                 nodeStart = results.next();
                 classCache.put(keyValue, nodeStart.getId());

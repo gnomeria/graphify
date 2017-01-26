@@ -26,7 +26,7 @@ public class PageRank {
 
         final Integer[] count = {0};
 
-        graphObject.keySet().forEach(n -> graph.addVertex(n));
+        graphObject.keySet().forEach(graph::addVertex);
 
         graphObject.keySet().forEach(g ->
         {

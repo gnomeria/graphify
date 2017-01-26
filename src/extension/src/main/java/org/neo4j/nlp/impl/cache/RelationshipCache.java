@@ -3,7 +3,6 @@ package org.neo4j.nlp.impl.cache;
 import com.google.common.cache.Cache;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.traversal.Evaluators;
-import org.neo4j.helpers.collection.IteratorUtil;
 import org.neo4j.nlp.helpers.GraphManager;
 import org.neo4j.nlp.impl.manager.NodeManager;
 
@@ -11,8 +10,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.neo4j.graphdb.DynamicRelationshipType.withName;
 
 /**
 * Copyright (C) 2014 Kenny Bastani
@@ -57,7 +54,7 @@ import static org.neo4j.graphdb.DynamicRelationshipType.withName;
             try (Transaction tx = db.beginTx()) {
                 ResourceIterable<Node> nodes = db.traversalDescription()
                         .depthFirst()
-                        .relationships(withName(getRelationshipType()), Direction.OUTGOING)
+                        .relationships(RelationshipType.withName(getRelationshipType()), Direction.OUTGOING)
                         .evaluator(Evaluators.fromDepth(1))
                         .evaluator(Evaluators.toDepth(1))
                         .traverse(startNode)
@@ -103,7 +100,7 @@ import static org.neo4j.graphdb.DynamicRelationshipType.withName;
             try(Transaction tx = db.beginTx()) {
                 Node startNode = db.getNodeById(start);
                 Node endNode = db.getNodeById(end);
-                Relationship rel = startNode.createRelationshipTo(endNode, withName(getRelationshipType()));
+                Relationship rel = startNode.createRelationshipTo(endNode, RelationshipType.withName(getRelationshipType()));
                 rel.setProperty("matches", 1);
                 relList.add(end);
                 relList = new HashSet<>(relList).stream().map(n -> n).collect(Collectors.toList());
@@ -120,15 +117,14 @@ import static org.neo4j.graphdb.DynamicRelationshipType.withName;
                 startNode = db.getNodeById(start);
                 tx.success();
             }
-
             try(Transaction tx = db.beginTx()) {
-                Relationship rel = IteratorUtil.asCollection(db.traversalDescription()
+                Relationship rel = db.traversalDescription()
                         .depthFirst()
-                        .relationships(withName(getRelationshipType()), Direction.OUTGOING)
+                        .relationships(RelationshipType.withName(getRelationshipType()), Direction.OUTGOING)
                         .evaluator(Evaluators.fromDepth(1))
                         .evaluator(Evaluators.toDepth(1))
                         .traverse(startNode)
-                        .relationships())
+                        .relationships()
                         .stream()
                         .filter(a -> a.getEndNode().getId() == end)
                         .findFirst()
